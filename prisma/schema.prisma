@@ -1,0 +1,70 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+model User {
+  id           Int          @id @default(autoincrement())
+  name         String
+  avatar       String
+  email        String       @unique
+  password     String
+  repositories Repository[]
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+}
+
+model Repository {
+  id          Int         @id @default(autoincrement())
+  name        String
+  description String
+  status      String       // e.g., "Updated", "In Progress", etc.
+  thumbnail   String       // Path to repository thumbnail
+  duration    String       // Total duration of videos
+  commits     Int          // Number of commits
+  branches    Branch[]     // Updated: Relationship with branches
+  authorId    Int
+  author      User         @relation(fields: [authorId], references: [id])
+  videos      Video[]      @relation("RepositoryVideos")
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Video {
+  id          Int         @id @default(autoincrement())
+  title       String
+  description String
+  tags        String[]
+  fileName    String       @unique
+  uploadUrl   String
+  version     String
+  repositoryId Int?        // Optional repository association
+  repository  Repository?  @relation("RepositoryVideos", fields: [repositoryId], references: [id])
+  commits     Commit[]     // Updated: Relationship with commits
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Branch {
+  id            Int         @id @default(autoincrement())
+  name          String
+  repositoryId  Int
+  repository    Repository  @relation(fields: [repositoryId], references: [id])
+  commits       Commit[]    // Updated: Relationship with commits
+  createdAt     DateTime    @default(now())
+}
+
+model Commit {
+  id          Int         @id @default(autoincrement())
+  commitId    String       // e.g., "c12345"
+  description String
+  changes     Json         // Metadata about changes
+  branchId    Int
+  branch      Branch       @relation(fields: [branchId], references: [id])
+  videoId     Int
+  video       Video        @relation(fields: [videoId], references: [id])
+  createdAt   DateTime     @default(now())
+}
