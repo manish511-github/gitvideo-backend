@@ -5,6 +5,7 @@ import { ErrorCode } from "@/utils/errorCodes";
 import { logger } from "@/config/logger";
 import { ENV } from "@/config/env";
 
+
 interface JwtPayload {
   userId: string;
   role: string;
@@ -55,6 +56,7 @@ export const requireAuth = async (
   }
 };
 
+
 export const requireRole = (roles: string[]) => {
   return (req: Request, res: Response, next: NextFunction): void => {
     try {
@@ -78,3 +80,5 @@ export const requireRole = (roles: string[]) => {
     }
   };
 };
+
+

@@ -2,6 +2,7 @@ import express from "express";
 import { ENV } from "@/config/env";
 import userRoutes from "@/routes/user.routes";
 import authRoutes from "@/routes/auth.routes";
+import repoRoutes from "@/routes/repo.routes";
 import uploadRoutes from "@/routes/upload.routes";
 import { errorHandler } from "@/middleware/errorHandler";
 import { setupSecurityHeaders } from "@/middleware/securityHeaders";
@@ -67,6 +68,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 
 app.use("/api/aws", uploadRoutes);
+app.use("/api/repo", repoRoutes);
 
 // Error Handler
 app.use(errorHandler);

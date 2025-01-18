@@ -1,3 +1,5 @@
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 import { Request, Response } from "express";
 import { AuthService } from "@/services/auth.service";
 import { ApiResponse } from "@/utils/apiResponse";
@@ -7,9 +9,14 @@ import { AppError } from "@/utils/appError";
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
-
+const JWT_SECRET = process.env.JWT_SECRET || "qwerty"
 export class AuthController {
   constructor(private authService: AuthService) {}
+  private generateToken = (userId: number): string => {
+    return jwt.sign({ userId }, JWT_SECRET, {
+      expiresIn: "1d",
+    });
+  }
 
   signup = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -26,15 +33,17 @@ export class AuthController {
       if (existingUser) {
         throw new AppError("Email already exists", 400);
       }
+
       
         const user = await prisma.user.create({
           data: {
             email,
             name,
-            password,
+            password :password,
             avatar
           },
         })
+
       
 
       logger.info({
@@ -43,7 +52,7 @@ export class AuthController {
         userId: user.id,
       });
 
-      ApiResponse.success(res, "Account created successfully", user);
+      ApiResponse.success(res, "Account created successfully",{ user});
     } catch (error) {
       // const handledError = ErrorHandler.handle(error, "AuthController.signup");
       // ApiResponse.error(
@@ -66,23 +75,32 @@ export class AuthController {
         email,
       });
 
-      const result = await this.authService.login(email, password);
+      const user = await prisma.user.findUnique({ where: { email,password } });
+      if (!user) {
+        throw new AppError("User not found", 400);
+      }
+  
+
+
+      // const result = await this.authService.login(email, password);
 
       logger.info({
         message: "Login successful",
         context: "AuthController.login",
-        userId: result.user.id,
+        userId: user.id,
       });
+      ApiResponse.success(res, "Logged in Sucessfully",{ user});
 
-      ApiResponse.success(res, "Login successful", result);
+      // ApiResponse.success(res, "Login successful", {user, token});
     } catch (error) {
-      const handledError = ErrorHandler.handle(error, "AuthController.login");
-      ApiResponse.error(
-        res,
-        handledError.message,
-        handledError.statusCode,
-        handledError.code
-      );
+      // const handledError = ErrorHandler.handle(error, "AuthController.login");
+      // ApiResponse.error(
+      //   res,
+      //   handledError.message,
+      //   handledError.statusCode,
+      //   handledError.code
+      // );
+      res.status(400).json({ message: error });
     }
   };
 

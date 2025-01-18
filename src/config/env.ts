@@ -21,7 +21,12 @@ const envSchema = z.object({
   SMTP_PASSWORD: process.env.NODE_ENV === "development" ? z.string().optional() : z.string(),
   SMTP_FROM: process.env.NODE_ENV === "development" ? z.string().email().optional() : z.string().email(),
   APP_NAME: process.env.NODE_ENV === "development" ? z.string().optional().default("Express Boilerplate") : z.string(),
-  SERVER_URL: z.string().url()
+  SERVER_URL: z.string().url(),
+  AWS_ACCESS_KEY_ID: z.string(),
+  AWS_SECRET_ACCESS_KEY: z.string(),
+  AWS_REGION: z.string(),
+  AWS_BUCKET_NAME: z.string(),
+  
 });
 
 export const ENV = envSchema.parse(process.env);
