@@ -69,8 +69,8 @@ const { name, description, thumbnail, authorId,fileName,fileType } = req.body;
             createdAt : new Date(),
         }
     });
-    
-    ApiResponse.success(res, "Repo created successfully", repo);
+
+    ApiResponse.success(res, "Repo created successfully", {repo,uploadUrl: videoUploadUrl});
   } catch (error) {
     handleError(res, error);
 

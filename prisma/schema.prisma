@@ -38,7 +38,7 @@ model Video {
   title       String
   description String
   tags        String[]
-  fileName    String       @unique
+  fileName    String       
   uploadUrl   String
   version     String
   repositoryId Int?        // Optional repository association
