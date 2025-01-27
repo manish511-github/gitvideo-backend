@@ -76,6 +76,27 @@ const { name, description, thumbnail, authorId,fileName,fileType } = req.body;
 
     }
 }
+getallRepos = async (req: Request, res: Response): Promise<void> => {
+    try{
+        const repos = await prisma.repository.findMany({
+            include: {
+              branches: {
+                include: {
+                  commits: true,  // Include commits within each branch
+                },
+              },
+              videos: true, // Include associated videos
+            },
+          });
+          ApiResponse.success(res, "All repositories fetched successfully", repos);
+    }
+    catch (error){
+        handleError(res, error);
+
+    }
+
+}
+
 }
 
 function handleError(res: Response, error: any) {
