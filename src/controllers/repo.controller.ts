@@ -97,6 +97,38 @@ getallRepos = async (req: Request, res: Response): Promise<void> => {
 
 }
 
+getRepoById = async (req: Request, res: Response): Promise<void> => {
+    const { id } = req.params;
+  
+    try {
+      // Check if ID is provided and valid
+      if (!id) {
+        throw new AppError("Repository ID is required", 400);
+      }
+  
+      // Fetch repository by ID along with related branches and videos
+      const repo = await prisma.repository.findUnique({
+        where: { id: Number(id) },
+        include: {
+          branches: {
+            include: {
+              commits: true,  // Include commits within each branch
+            },
+          },
+          videos: true,  // Include associated videos
+        },
+      });
+  
+      if (!repo) {
+        throw new AppError("Repository not found", 404);
+      }
+  
+      ApiResponse.success(res, "Repository fetched successfully", repo);
+    } catch (error) {
+      handleError(res, error);
+    }
+  };
+
 }
 
 function handleError(res: Response, error: any) {

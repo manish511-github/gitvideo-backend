@@ -7,4 +7,5 @@ const repoController = new RepoController(AwsServiceInstance);
 // Define the upload route
 router.post('/createRepo', repoController.createRepo);
 router.get('/repos',repoController.getallRepos);
+router.get('/repos/:id',repoController.getRepoById)
 export default router;
