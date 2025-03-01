@@ -6,6 +6,7 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
 model User {
   id           Int          @id @default(autoincrement())
   name         String
@@ -18,64 +19,71 @@ model User {
 }
 
 model Repository {
-  id          Int         @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
   name        String
   description String
-  status      String       // e.g., "Updated", "In Progress", etc.
-  thumbnail   String       // Path to repository thumbnail
-  duration    String       // Total duration of videos
-  commits     Int          // Number of commits
-  branches    Branch[]     // Updated: Relationship with branches
+  status      String // e.g., "Updated", "In Progress", etc.
+  thumbnail   String // Path to repository thumbnail
+  duration    String // Total duration of videos
+  commits     Int // Number of commits
+  branches    Branch[] // Updated: Relationship with branches
   authorId    Int
-  author      User         @relation(fields: [authorId], references: [id])
-  videos      Video[]      @relation("RepositoryVideos")
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  author      User     @relation(fields: [authorId], references: [id])
+  videos      Video[]  @relation("RepositoryVideos")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Video {
-  id          Int         @id @default(autoincrement())
-  title       String
-  description String
-  tags        String[]
-  fileName    String       
-  uploadUrl   String
-  version     String
-  repositoryId Int?        // Optional repository association
-  repository  Repository?  @relation("RepositoryVideos", fields: [repositoryId], references: [id])
-  commits     Commit[]     // Updated: Relationship with commits
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  id           Int         @id @default(autoincrement())
+  title        String
+  description  String
+  tags         String[]
+  fileName     String
+  uploadUrl    String
+  version      String
+  repositoryId Int? // Optional repository association
+  repository   Repository? @relation("RepositoryVideos", fields: [repositoryId], references: [id])
+  commits      Commit[] // Updated: Relationship with commits
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
 }
 
 model Branch {
-  id            Int         @id @default(autoincrement())
-  name          String
-  repositoryId  Int
-  repository    Repository  @relation(fields: [repositoryId], references: [id])
-  commits       Commit[]    // Updated: Relationship with commits
-  createdAt     DateTime    @default(now())
+  id           Int        @id @default(autoincrement())
+  name         String
+  repositoryId Int
+  repository   Repository @relation(fields: [repositoryId], references: [id])
+  commits      Commit[] // Updated: Relationship with commits
+  createdAt    DateTime   @default(now())
 }
 
 model Commit {
-  id          Int         @id @default(autoincrement())
-  commitId    String       // e.g., "c12345"
-  description String
-  changes     Json         // Metadata about changes
-  branchId    Int
-  branch      Branch       @relation(fields: [branchId], references: [id])
-  videoId     Int
-  video       Video        @relation(fields: [videoId], references: [id])
-  createdAt   DateTime     @default(now())
-}
-model Change {
-  id         Int      @id @default(autoincrement())
-  commitId   Int
-  type       String   // Change type: "cut", "overlay", "text"
-  start      Float?   // Start timestamp for the change
-  end        Float?   // End timestamp (for "cut")
-  content    String?  // Additional content (e.g., text or file path for overlay)
-  position   Json?    // Position for overlays or text
+  id             Int      @id @default(autoincrement())
+  commitId       String   @unique
+  description    String //Commit message
+  changes        Json // Stores operations like cut, merge, insert
+  branchId       Int
+  branch         Branch   @relation(fields: [branchId], references: [id])
+  videoId        Int
+  video          Video    @relation(fields: [videoId], references: [id])
+  parentCommitId Int? // Allow null values
+  parentCommit   Commit?  @relation("ParentCommit", fields: [parentCommitId], references: [id])
+  childCommits   Commit[] @relation("ParentCommit") // This is the missing opposite field
 
-  commit     Commit   @relation(fields: [commitId], references: [id])
+  createdAt DateTime @default(now())
+
+  Change Change[]
+}
+
+model Change {
+  id       Int     @id @default(autoincrement())
+  commitId Int
+  type     String // Change type: "cut", "overlay", "text"
+  start    Float? // Start timestamp for the change
+  end      Float? // End timestamp (for "cut")
+  content  String? // Additional content (e.g., text or file path for overlay)
+  position Json? // Position for overlays or text
+
+  commit Commit @relation(fields: [commitId], references: [id])
 }

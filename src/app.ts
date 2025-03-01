@@ -3,6 +3,7 @@ import { ENV } from "@/config/env";
 import userRoutes from "@/routes/user.routes";
 import authRoutes from "@/routes/auth.routes";
 import repoRoutes from "@/routes/repo.routes";
+import commitRoutes from "@/routes/commit.routes";
 import uploadRoutes from "@/routes/upload.routes";
 import { errorHandler } from "@/middleware/errorHandler";
 import { setupSecurityHeaders } from "@/middleware/securityHeaders";
@@ -69,6 +70,7 @@ app.use("/api/users", userRoutes);
 
 app.use("/api/aws", uploadRoutes);
 app.use("/api/repo", repoRoutes);
+app.use("/api/commit", commitRoutes);
 
 // Error Handler
 app.use(errorHandler);
