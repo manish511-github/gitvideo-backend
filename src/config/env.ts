@@ -26,7 +26,9 @@ const envSchema = z.object({
   AWS_SECRET_ACCESS_KEY: z.string(),
   AWS_REGION: z.string(),
   AWS_BUCKET_NAME: z.string(),
-  
+  KAFKA_CLIENT_ID: z.string(),
+  KAFKA_BROKERS: z.string(),
+  KAFKA_GROUP_ID:z.string()
 });
 
 export const ENV = envSchema.parse(process.env);
@@ -40,9 +42,9 @@ if (process.env.NODE_ENV === 'production') {
     'SMTP_PASSWORD'
   ];
   
-  requiredFields.forEach(field => {
-    if (!process.env[field]) {
-      throw new Error(`Missing required env variable: ${field}`);
-    }
-  });
+  // requiredFields.forEach(field => {
+  //   if (!process.env[field]) {
+  //     throw new Error(`Missing required env variable: ${field}`);
+  //   }
+  // });
 }
