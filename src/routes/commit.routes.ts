@@ -7,6 +7,8 @@ const router = Router();
 const commitService = new CommitService();
 const commitController = new CommitController(commitService);
 // Define the upload route
-router.post('/createCommit', validateRequest(createcommitSchema),commitController.createCommit);
+router.post('/createcommit', validateRequest(createcommitSchema),commitController.createCommit);
+router.get('/commit/:id', commitController.getCommit);
+
 
 export default router;
