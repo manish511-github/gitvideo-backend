@@ -20,7 +20,7 @@ const envSchema = z.object({
   SMTP_USER: process.env.NODE_ENV === "development" ? z.string().optional() : z.string(),
   SMTP_PASSWORD: process.env.NODE_ENV === "development" ? z.string().optional() : z.string(),
   SMTP_FROM: process.env.NODE_ENV === "development" ? z.string().email().optional() : z.string().email(),
-  APP_NAME: process.env.NODE_ENV === "development" ? z.string().optional().default("Express Boilerplate") : z.string(),
+  APP_NAME: process.env.NODE_ENV === "development" ? z.string().optional().default("GIT VIDEO") : z.string(),
   SERVER_URL: z.string().url(),
   AWS_ACCESS_KEY_ID: z.string(),
   AWS_SECRET_ACCESS_KEY: z.string(),
@@ -28,7 +28,10 @@ const envSchema = z.object({
   AWS_BUCKET_NAME: z.string(),
   KAFKA_CLIENT_ID: z.string(),
   KAFKA_BROKERS: z.string(),
-  KAFKA_GROUP_ID:z.string()
+  KAFKA_GROUP_ID:z.string(),
+  REDIS_HOST:z.string(),
+  REDIS_PORT:z.string(),
+  REDIS_PASSWORD:z.string()
 });
 
 export const ENV = envSchema.parse(process.env);
