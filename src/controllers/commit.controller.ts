@@ -30,7 +30,7 @@ export class CommitController{
                   changes,
                   branch: { connect: { id: branchId } },
                   video: { connect: { id: videoId } },
-                  parentCommit: latestCommit ? { connect: { id: latestCommit.id } } : undefined, // ✅ Fix
+                  parentCommit: latestCommit ? { connect: { id: latestCommit.id } } : undefined,
 
                 }
 

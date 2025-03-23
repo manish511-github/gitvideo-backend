@@ -45,8 +45,20 @@ model Video {
   repositoryId Int? // Optional repository association
   repository   Repository? @relation("RepositoryVideos", fields: [repositoryId], references: [id])
   commits      Commit[] // Updated: Relationship with commits
+  timeline     Segment[]
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
+  Change       Change[]
+}
+
+model Segment {
+  id              Int   @id @default(autoincrement())
+  videoId         Int
+  sourceVideoId   Int
+  sourceStartTime Float
+  sourceEndTime   Float
+  globalStartTime Float
+  video           Video @relation(fields: [videoId], references: [id])
 }
 
 model Branch {
@@ -77,13 +89,16 @@ model Commit {
 }
 
 model Change {
-  id       Int     @id @default(autoincrement())
-  commitId Int
-  type     String // Change type: "cut", "overlay", "text"
-  start    Float? // Start timestamp for the change
-  end      Float? // End timestamp (for "cut")
-  content  String? // Additional content (e.g., text or file path for overlay)
-  position Json? // Position for overlays or text
-
-  commit Commit @relation(fields: [commitId], references: [id])
+  id            Int      @id @default(autoincrement())
+  changeId      String   @unique
+  videoId       Int
+  operation     String
+  sourceVideoId Int?
+  start         Float
+  end           Float
+  at            Float
+  createdAt     DateTime @default(now())
+  video         Video    @relation(fields: [videoId], references: [id])
+  Commit        Commit?  @relation(fields: [commitId], references: [id])
+  commitId      Int?
 }

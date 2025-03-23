@@ -5,6 +5,8 @@ import authRoutes from "@/routes/auth.routes";
 import repoRoutes from "@/routes/repo.routes";
 import commitRoutes from "@/routes/commit.routes";
 import uploadRoutes from "@/routes/upload.routes";
+import changeRoutes from "@/routes/change.routes"
+
 import { errorHandler } from "@/middleware/errorHandler";
 import { setupSecurityHeaders } from "@/middleware/securityHeaders";
 import { apiLimiter } from "@/middleware/rateLimiter";
@@ -71,6 +73,8 @@ app.use("/api/users", userRoutes);
 app.use("/api/aws", uploadRoutes);
 app.use("/api/repo", repoRoutes);
 app.use("/api/commit", commitRoutes);
+app.use("/api/change", changeRoutes);
+
 
 // Error Handler
 app.use(errorHandler);
