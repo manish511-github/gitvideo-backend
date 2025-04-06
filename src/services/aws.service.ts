@@ -4,10 +4,12 @@ import { ENV } from "@/config/env";
 import { AppError } from "@/utils/appError";
 import { logger } from "@/config/logger";
 import { ErrorCode } from "@/utils/errorCodes";
+import { timeStamp } from 'console';
 
 
 export class AwsService {
     private s3: AWS.S3;
+    private sqs: AWS.SQS;
     
     constructor() {
         this.s3 = new AWS.S3({
@@ -16,6 +18,13 @@ export class AwsService {
         accessKeyId: ENV.AWS_ACCESS_KEY_ID,
         secretAccessKey: ENV.AWS_SECRET_ACCESS_KEY,
         });
+
+        this.sqs = new AWS.SQS({
+            endpoint : process.env.AWS_SQS_ENDPOINT || 'http://localhost:4566',
+            region: ENV.AWS_REGION,
+            accessKeyId: ENV.AWS_ACCESS_KEY_ID,
+            secretAccessKey: ENV.AWS_SECRET_ACCESS_KEY,
+        })
     }
     async generatePresignedUrl(fileName: string, fileType: string): Promise<string> {
         try {
@@ -41,5 +50,34 @@ export class AwsService {
         }
     
   
+    }
+    async sendUploadNotification(event : string, fileName: string, fileType: string) :Promise<void>{
+        try {
+            const messageBody = JSON.stringify({
+                event,
+                fileName,
+                fileType,
+                timestamp: new Date().toISOString(),
+            });
+
+            const params : AWS.SQS.SendMessageRequest = {
+                QueueUrl: ENV.AWS_SQS_QUEUE_URL,
+                MessageBody :messageBody
+            }
+            await this.sqs.sendMessage(params).promise()
+            logger.info({
+                message: "Notification sent to SQS",
+                context: "S3Service.sendUploadNotification",
+                details: { event, fileName, fileType },
+            })
+
+        }catch (error)
+        {
+            logger.error({
+                message: "Failed to send SQS notification",
+                context: "S3Service.sendUploadNotification",
+                error: error instanceof Error ? error.message : "Unknown error",
+            })
+        }
     }
 }
