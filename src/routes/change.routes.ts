@@ -7,5 +7,6 @@ const router = Router();
 const changeController = new ChangeController();
 
 router.post('/addchange', changeController.addChange);
+router.post('/revertchange', changeController.revertChange);
 
 export default router;
