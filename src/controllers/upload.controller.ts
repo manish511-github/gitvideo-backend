@@ -36,31 +36,47 @@ export const uploadFile = async (req, res) => {
     };
 
     const uploadUrl = await s3.getSignedUrlPromise('putObject', params);
-
-    // Step 2: Save Metadata in Database
-    const VideoRepository = await prisma.VideoRepository.upsert({
-      where: { fileName }, // Assuming fileName is unique
-      update: {
-        title,
+    
+    const saveVideo = await prisma.video.create({
+      data :{
+       title,
         description,
-        tags,
-        version: 'v1',
-        createdAt: new Date(),
-        uploadUrl,
-      },
-      create: {
-        title,
-        description,
-        tags,
         fileName,
         version: 'v1',
         createdAt: new Date(),
         uploadUrl,
+      }
+    })
+
+    // Step 2: Save Metadata in Database
+    const VideoRepository = await prisma.repository.upsert({
+      where: { name: fileName },
+      update: {
+        description,
+        authorId: 1,
       },
-    });
+      create: {
+        name: fileName,
+        description,
+        authorId: 1,
+        status: "In Progress",
+        thumbnail: "",
+        duration: "0s",
+        commits: 0,
+        createdAt: new Date(),
+        videos: {
+          connect: { id: saveVideo.id },
+        },
+        branches: {
+          create: {
+            name: "main", // 👈 default initial branch
+          },
+        },
+      },
+    })
 
     // Respond with the presigned URL and video metadata
-    return res.status(200).json({ uploadUrl, video });
+    return res.status(200).json({ uploadUrl, saveVideo });
   } catch (error) {
     console.error('Upload error:', error);
     return res.status(500).json({ error: 'Failed to process request' });
@@ -68,11 +84,7 @@ export const uploadFile = async (req, res) => {
 };
 
 
-export const hello = async (req, res) => {
-    if (req.method === 'GET') {
-        return res.status(200).json({ message: 'Hello from Express.js!' });
-    }
-  };
+
 
 export const getVideos = async (req, res) => {
     try {

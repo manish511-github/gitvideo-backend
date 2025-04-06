@@ -20,7 +20,7 @@ model User {
 
 model Repository {
   id          Int      @id @default(autoincrement())
-  name        String
+  name        String   @unique
   description String
   status      String // e.g., "Updated", "In Progress", etc.
   thumbnail   String // Path to repository thumbnail
@@ -89,16 +89,27 @@ model Commit {
 }
 
 model Change {
-  id            Int      @id @default(autoincrement())
-  changeId      String   @unique
-  videoId       Int
-  operation     String
-  sourceVideoId Int?
-  start         Float
-  end           Float
-  at            Float
-  createdAt     DateTime @default(now())
-  video         Video    @relation(fields: [videoId], references: [id])
-  Commit        Commit?  @relation(fields: [commitId], references: [id])
-  commitId      Int?
+  id              Int              @id @default(autoincrement())
+  changeId        String           @unique
+  videoId         Int
+  operation       String
+  sourceVideoId   Int?
+  start           Float
+  end             Float
+  at              Float
+  createdAt       DateTime         @default(now())
+  video           Video            @relation(fields: [videoId], references: [id])
+  Commit          Commit?          @relation(fields: [commitId], references: [id])
+  commitId        Int?
+  changeTimeline  ChangeTimeline[] @relation(name: "ChangeTimelineToChange")
+  parentTimelines ChangeTimeline[] @relation(name: "ChangeTimelineToParentChange")
+}
+
+model ChangeTimeline {
+  id             Int     @id @default(autoincrement())
+  changeId       String  @unique
+  change         Change  @relation(name: "ChangeTimelineToChange", fields: [changeId], references: [changeId])
+  parentchangeId String?
+  parentchange   Change? @relation(name: "ChangeTimelineToParentChange", fields: [parentchangeId], references: [changeId])
+  chTimeline     Json
 }
