@@ -18,13 +18,15 @@ export class NotificationController {
 
 sqsNotification = async (req: Request, res: Response): Promise<void> => {
     try { 
-        const {event, filename, filetype} =req.body;
-
-        if (!event || !filename || !filetype) {
+        const {event, repo, filename, filetype} =req.body;
+        if (!event || !filename || !filetype || !repo) {
             res.status(400).json({ error: 'Missing filename or filetype' });
             return;
           }
-        await this.awsService.sendUploadNotification(event, filename, filetype)
+
+          const commitId= repo.repocommit.commitId;
+
+        await this.awsService.sendUploadNotification(event, filename, filetype, commitId)
 
         ApiResponse.success(res, "Video Processing Initiated", filename);    
     }

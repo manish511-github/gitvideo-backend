@@ -12,8 +12,22 @@ import { connect } from 'http2';
 import { CommitService } from '@/services/commit.service';
 import {redisService} from '@/services/redis.service';
 import {logger} from '@/config/logger'
+import { KafkaService } from '@/services/kafka.service';
+
+interface VideoProcessedMessage {
+    commit_id : string,
+    playlist : string
+}
 export class CommitController{
-    constructor(private commitService: CommitService) {}
+    constructor(
+        private commitService: CommitService,
+        private kafkaService: KafkaService = new KafkaService() // Default instance
+
+    ) {
+        this.initializeKafkaListener().catch(error =>{
+            logger.error('Failed to intialize Kafka Listener:',error)
+        })
+    }
     createCommit = async (req : Request, res: Response) :Promise<void> =>{
         try {
             const {videoId, branchId, description, changes} = req.body;
@@ -77,16 +91,52 @@ export class CommitController{
 
         }
     }
-    /**
-     * Rollback the commit 
-     */
 
+    updatePlaylistUrl = async (commitId: string, playlistUrl: string): Promise<void> => {
+        logger.info(`[updatePlaylistUrl] Request received`, { commitId, playlistUrl });
+        try {
+            if (!commitId || !playlistUrl) {
+                logger.warn(`[updatePlaylistUrl] Missing required fields`, { commitId, playlistUrl });
+                throw new AppError("commitId and playlistUrl are required", 400);
+            }
 
+            await prisma.commit.update({
+                where: { commitId },
+                data: { playlistUrl: playlistUrl },
+            });
+            
+            logger.info(`[updatePlaylistUrl] Playlist URL updated successfully`, { commitId, playlistUrl });
+        } catch (error: any) {
+            logger.error(`[updatePlaylistUrl] Error updating playlist URL`, {
+                message: error.message,
+                stack: error.stack,
+                commitId,
+                playlistUrl,
+            });
+            throw error;
+        }
+    };
 
+    async initializeKafkaListener(): Promise<void>{
+        try {
+            await this.kafkaService.consumeMessages("video.processed", async (message) =>{
+                try {
+                    
+                    await this.updatePlaylistUrl(message.commit_id, message.playlist_url);
+                }catch(error)
+                {
+                    logger.error(`Error processing Kafka message:`, error);
+                }
+            })
+            logger.info('Kafka consumer started successfully');
 
-
-
+        }catch(error){
+            logger.error('Failed to initialize Kafka listener:', error);
+            throw error;
+        }
+    }
 }
+
 
 function handleError(res: Response, error: any) {
     if (error instanceof AppError) {

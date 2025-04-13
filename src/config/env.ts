@@ -29,6 +29,7 @@ const envSchema = z.object({
   AWS_BUCKET_NAME: z.string(),
   KAFKA_CLIENT_ID: z.string(),
   KAFKA_BROKERS: z.string(),
+  KAFKA_BROKERS_EXTERNAL : z.string(),
   KAFKA_GROUP_ID:z.string(),
   REDIS_HOST:z.string(),
   REDIS_PORT:z.string(),

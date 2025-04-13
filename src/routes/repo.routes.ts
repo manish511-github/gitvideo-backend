@@ -8,4 +8,5 @@ const repoController = new RepoController(AwsServiceInstance);
 router.post('/createRepo', repoController.createRepo);
 router.get('/repos',repoController.getallRepos);
 router.get('/repos/:id',repoController.getRepoById)
+router.post('/updaterepostatus/:id',repoController.updateRepoStatus)
 export default router;

@@ -19,7 +19,7 @@ export class UserController {
     try {
       if (
         !req.user ||
-        (req.user.role !== "ADMIN" && req.user.userId !== req.params.id)
+        (req.user.role !== "ADMIN" && req.usexr.userId !== req.params.id)
       ) {
         ApiResponse.error(res, "Not authorized to access this profile", 403);
         return;

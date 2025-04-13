@@ -9,6 +9,6 @@ const commitController = new CommitController(commitService);
 // Define the upload route
 router.post('/createcommit', validateRequest(createcommitSchema),commitController.createCommit);
 router.get('/commit/:id', commitController.getCommit);
-
+router.post('/update-playlist',commitController.updatePlaylistUrl)
 
 export default router;

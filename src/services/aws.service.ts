@@ -51,12 +51,13 @@ export class AwsService {
     
   
     }
-    async sendUploadNotification(event : string, fileName: string, fileType: string) :Promise<void>{
+    async sendUploadNotification(event : string, fileName: string, fileType: string, commitId: string) :Promise<void>{
         try {
             const messageBody = JSON.stringify({
                 event,
                 fileName,
                 fileType,
+                commitId,
                 timestamp: new Date().toISOString(),
             });
 

@@ -9,73 +9,93 @@ import { Request, Response } from 'express';
 import { int } from 'aws-sdk/clients/datapipeline';
 import { v4 as uuidv4 } from 'uuid';
 import { connect } from 'http2';
+import { logger } from "@/config/logger";
 
 
 
 export class RepoController {
     constructor(private awsService: AwsService) {}
 
-createRepo = async (req: Request, res: Response): Promise<void> => {
-const { name, description, thumbnail, authorId,fileName,fileType } = req.body;
-  try {
-    const repo = await prisma.repository.create({
-      data: {
-        name,
-        description,
-        authorId: authorId,
-        status: "Created",
-        thumbnail: thumbnail,
-        duration : '0',
-        commits: 0,
-        createdAt: new Date(),
-      },
-    });
-   const dbranch =  await prisma.branch.create({
-        data : {
-            name :'main',
-            repositoryId : repo.id,
-        },
-    })
-
-    const videoUploadUrl = await this.awsService.generatePresignedUrl(fileName, fileType);
-    const VideoMetaData = await prisma.video.create({
-        data: {
-            title : repo.name,
-            description : repo.description,
+    createRepo = async (req: Request, res: Response): Promise<void> => {
+      const { name, description, thumbnail, authorId, fileName, fileType } = req.body;
+    
+      logger.info(`[createRepo] Request received`, {
+        body: { name, description, thumbnail, authorId, fileName, fileType }
+      });
+    
+      try {
+        const repo = await prisma.repository.create({
+          data: {
+            name,
+            description,
+            authorId: authorId,
+            status: "Added",
+            thumbnail: thumbnail,
+            duration: '0',
+            commits: 0,
+            createdAt: new Date(),
+          },
+        });
+        logger.info(`[createRepo] Repository created`, { repoId: repo.id });
+    
+        const dbranch = await prisma.branch.create({
+          data: {
+            name: 'main',
+            repositoryId: repo.id,
+          },
+        });
+        logger.info(`[createRepo] Branch 'main' created`, { branchId: dbranch.id });
+    
+        const videoUploadUrl = await this.awsService.generatePresignedUrl(fileName, fileType);
+        logger.info(`[createRepo] Pre-signed URL generated`, { videoUploadUrl });
+    
+        const VideoMetaData = await prisma.video.create({
+          data: {
+            title: repo.name,
+            description: repo.description,
             repositoryId: repo.id,
             fileName,
             uploadUrl: videoUploadUrl,
-            version : 'v1',
+            version: 'v1',
             createdAt: new Date(),
-        },
-    })
-
-    await prisma.commit.create({
-        data: {
+          },
+        });
+        logger.info(`[createRepo] Video metadata created`, { videoId: VideoMetaData.id });
+    
+        const repocommit = await prisma.commit.create({
+          data: {
             commitId: uuidv4(),
             description: 'Initial video upload',
-            changes:{},
-            branch : {
-                connect : {
-                    id : dbranch.id,
-                },
+            changes: {timeline: [
+              {"repo": `${repo.name}`, "branch": "main", "start": 6, "end": 20},
+            ]},
+            branch: {
+              connect: {
+                id: dbranch.id,
+              },
             },
-            video : {
-                connect : {
-                    id : VideoMetaData.id,
-                },
+            video: {
+              connect: {
+                id: VideoMetaData.id,
+              },
+            },
+            createdAt: new Date(),
+          }
+        });
+        logger.info(`[createRepo] Initial commit created`);
+        (repo as any).repocommit = repocommit;    
+        ApiResponse.success(res, "Repo created successfully", { repo, uploadUrl: videoUploadUrl });
+      } catch (error) {
+        logger.error(`[createRepo] Error creating repo`, {
+          message: error.message,
+          stack: error.stack,
+          data: { name, fileName, authorId }
+        });
     
-            },
-            createdAt : new Date(),
-        }
-    });
+        handleError(res, error);
+      }
+    };
 
-    ApiResponse.success(res, "Repo created successfully", {repo,uploadUrl: videoUploadUrl});
-  } catch (error) {
-    handleError(res, error);
-
-    }
-}
 getallRepos = async (req: Request, res: Response): Promise<void> => {
     try{
         const repos = await prisma.repository.findMany({
@@ -129,6 +149,25 @@ getRepoById = async (req: Request, res: Response): Promise<void> => {
     }
   };
 
+  updateRepoStatus = async (req: Request, res: Response): Promise <void> =>{
+    const {id} = req.params;
+    try {
+      if (!id)
+      {       
+         throw new AppError("Repository ID is required", 400);
+      }
+    const updateVideo = await prisma.repository.update({
+      where: { id: Number(id)},
+      data: {
+        status : "Created"
+      }
+    })
+    ApiResponse.success(res,"Repository Activated",updateVideo)
+    } catch (error)
+    {
+      handleError(res,error)
+    }
+}
 }
 
 function handleError(res: Response, error: any) {

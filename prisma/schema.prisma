@@ -20,7 +20,7 @@ model User {
 
 model Repository {
   id          Int      @id @default(autoincrement())
-  name        String   @unique
+  name        String
   description String
   status      String // e.g., "Updated", "In Progress", etc.
   thumbnail   String // Path to repository thumbnail
@@ -73,7 +73,9 @@ model Branch {
 model Commit {
   id             Int      @id @default(autoincrement())
   commitId       String   @unique
+  thumbnail      String   @default("https://www.gravatar.com/avatar/2c7d99fe281ecd3bcd65ab915bac6dd5?s=250")
   description    String //Commit message
+  playlistUrl    String?
   changes        Json // Stores operations like cut, merge, insert
   branchId       Int
   branch         Branch   @relation(fields: [branchId], references: [id])
