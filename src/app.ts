@@ -6,6 +6,8 @@ import repoRoutes from "@/routes/repo.routes";
 import commitRoutes from "@/routes/commit.routes";
 import uploadRoutes from "@/routes/upload.routes";
 import changeRoutes from "@/routes/change.routes";
+import metadataRoutes from "@/routes/metadata.routes";
+
 import notificationRoutes from "@/routes/notification.routes";
 
 import { errorHandler } from "@/middleware/errorHandler";
@@ -75,6 +77,7 @@ app.use("/api/aws", uploadRoutes);
 app.use("/api/repo", repoRoutes);
 app.use("/api/commit", commitRoutes);
 app.use("/api/change", changeRoutes);
+app.use("/api/metadata", metadataRoutes);
 
 
 // Error Handler

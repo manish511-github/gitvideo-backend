@@ -13,6 +13,7 @@ import { CommitService } from '@/services/commit.service';
 import {redisService} from '@/services/redis.service';
 import {logger} from '@/config/logger'
 import { KafkaService } from '@/services/kafka.service';
+import { float } from 'aws-sdk/clients/cloudfront';
 
 interface VideoProcessedMessage {
     commit_id : string,
@@ -92,7 +93,7 @@ export class CommitController{
         }
     }
 
-    updatePlaylistUrl = async (commitId: string, playlistUrl: string): Promise<void> => {
+    updatePlaylistUrl = async (commitId: string, playlistUrl: string, duration: float): Promise<void> => {
         logger.info(`[updatePlaylistUrl] Request received`, { commitId, playlistUrl });
         try {
             if (!commitId || !playlistUrl) {
@@ -102,7 +103,9 @@ export class CommitController{
 
             await prisma.commit.update({
                 where: { commitId },
-                data: { playlistUrl: playlistUrl },
+                data: { playlistUrl: playlistUrl,
+                        duration: duration
+                 },
             });
             
             logger.info(`[updatePlaylistUrl] Playlist URL updated successfully`, { commitId, playlistUrl });
@@ -121,8 +124,8 @@ export class CommitController{
         try {
             await this.kafkaService.consumeMessages("video.processed", async (message) =>{
                 try {
-                    
-                    await this.updatePlaylistUrl(message.commit_id, message.playlist_url);
+
+                    await this.updatePlaylistUrl(message.commit_id, message.playlist_url, message.duration);
                 }catch(error)
                 {
                     logger.error(`Error processing Kafka message:`, error);

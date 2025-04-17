@@ -71,19 +71,21 @@ model Branch {
 }
 
 model Commit {
-  id             Int      @id @default(autoincrement())
-  commitId       String   @unique
-  thumbnail      String   @default("https://www.gravatar.com/avatar/2c7d99fe281ecd3bcd65ab915bac6dd5?s=250")
+  id             Int              @id @default(autoincrement())
+  commitId       String           @unique
+  thumbnail      String           @default("https://www.gravatar.com/avatar/2c7d99fe281ecd3bcd65ab915bac6dd5?s=250")
   description    String //Commit message
+  duration       Float?
   playlistUrl    String?
   changes        Json // Stores operations like cut, merge, insert
   branchId       Int
-  branch         Branch   @relation(fields: [branchId], references: [id])
+  branch         Branch           @relation(fields: [branchId], references: [id])
+  commitMetaData CommitMetaData[] // Relation to CommitMetaData
   videoId        Int
-  video          Video    @relation(fields: [videoId], references: [id])
+  video          Video            @relation(fields: [videoId], references: [id])
   parentCommitId Int? // Allow null values
-  parentCommit   Commit?  @relation("ParentCommit", fields: [parentCommitId], references: [id])
-  childCommits   Commit[] @relation("ParentCommit") // This is the missing opposite field
+  parentCommit   Commit?          @relation("ParentCommit", fields: [parentCommitId], references: [id])
+  childCommits   Commit[]         @relation("ParentCommit") // This is the missing opposite field
 
   createdAt DateTime @default(now())
 
@@ -114,4 +116,13 @@ model ChangeTimeline {
   parentchangeId String?
   parentchange   Change? @relation(name: "ChangeTimelineToParentChange", fields: [parentchangeId], references: [changeId])
   chTimeline     Json
+}
+
+model CommitMetaData {
+  id        Int      @id @default(autoincrement())
+  commitId  Int      @unique // Making it a one-to-one relationship
+  metaData  Json
+  commit    Commit   @relation(fields: [commitId], references: [id], onDelete: Cascade) // Foreign key to Commit
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
