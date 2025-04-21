@@ -7,7 +7,7 @@ import { ErrorCode } from "@/utils/errorCodes";
 export class KafkaService {
     private kafka: Kafka;
     private producer: Producer;
-    private consumer: Consumer;
+    private consumer: Consumer | null = null;
     private isProducerConnected: boolean = false;
     private isConsumerConnected: boolean = false;
 
@@ -127,16 +127,20 @@ export class KafkaService {
     /**
      * Starts consuming messages from a Kafka topic
      */
-    async consumeMessages(topic: string, callback: (message: any) => Promise<void>): Promise<void> {
+    async consumeMessages(topic: string, callback: (message: any) => Promise<void>, groupId?: string): Promise<void> {
         try {
-            if (!this.isConsumerConnected) {
-                await this.consumer.connect();
-                this.isConsumerConnected = true;
-            }
-
-            await this.consumer.subscribe({ topic, fromBeginning: true });
-
-            await this.consumer.run({
+            // Allow custom groupId or fallback to default
+            const consumer = this.kafka.consumer({
+                groupId: groupId || ENV.KAFKA_GROUP_ID,
+                heartbeatInterval: 3000,
+                sessionTimeout: 10000,
+                maxBytesPerPartition: 1048576 // 1MB
+            });
+    
+            await consumer.connect();
+            await consumer.subscribe({ topic, fromBeginning: true });
+    
+            await consumer.run({
                 autoCommit: true,
                 autoCommitInterval: 5000,
                 eachMessage: async ({ topic, partition, message }) => {
@@ -166,25 +170,24 @@ export class KafkaService {
                     }
                 }
             });
-
+    
             logger.info({
-                message: `Kafka Consumer subscribed to topic ${topic}`,
+                message: `Kafka Consumer subscribed to topic ${topic} with groupId ${groupId || ENV.KAFKA_GROUP_ID}`,
                 context: "KafkaService.consumeMessages",
                 topic
             });
         } catch (error) {
-            this.isConsumerConnected = false;
             logger.error({
                 message: `Failed to consume messages from Kafka topic ${topic}`,
                 context: "KafkaService.consumeMessages",
                 error: error instanceof Error ? error.message : "Unknown error",
                 stack: error instanceof Error ? error.stack : undefined,
-                topic
+                topic,
+                groupId: groupId || ENV.KAFKA_GROUP_ID
             });
             throw new AppError("Failed to consume Kafka message", 500, ErrorCode.INTERNAL_SERVER_ERROR);
         }
     }
-
     /**
      * Disconnects the Kafka Consumer
      */

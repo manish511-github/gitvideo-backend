@@ -43,13 +43,38 @@ app.use(metricsMiddleware);
 setupSecurityHeaders(app);
 app.use(express.json({ limit: "10kb" }));
 
-// CORS
 app.use(
   cors({
-    origin: ENV.FRONTEND_URL,
+    origin: true,   // Allow any origin
     credentials: true,
   })
 );
+
+// const allowedOrigins = [
+//   "https://v0-gitvideofrontendmain.vercel.app",
+//   "http://localhost:3000"
+// ];
+// app.use(
+//   cors({
+//     origin: function (origin, callback) {
+//       // Allow requests with no origin (like Postman or curl)
+//       if (!origin) return callback(null, true);
+//       if (allowedOrigins.includes(origin)) {
+//         return callback(null, true);
+//       } else {
+//         return callback(new Error("Not allowed by CORS"));
+//       }
+//     },
+//     credentials: true,
+//   })
+// );
+// CORS
+// app.use(
+//   cors({
+//     origin: ENV.FRONTEND_URL,
+//     credentials: true,
+//   })
+// );
 
 // Rate limiting
 app.use("/api/auth", authLimiter);

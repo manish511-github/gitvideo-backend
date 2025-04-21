@@ -130,7 +130,7 @@ export class CommitController{
                 {
                     logger.error(`Error processing Kafka message:`, error);
                 }
-            })
+            },"commit-group")
             logger.info('Kafka consumer started successfully');
 
         }catch(error){

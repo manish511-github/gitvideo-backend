@@ -64,7 +64,13 @@ export class MetadataController {
             if (!commitId) {
                 throw new AppError("commitId is required", 400);
             }
-
+            
+            const existingCommit = await prisma.commit.findUnique({
+                where: { commitId: commitId },
+            });
+            if (!existingCommit) {
+                throw new AppError(`Commit with ID ${commitId} not found`, 404);
+            }
             const cachedMetadata = await redisService.get(`commit:metadata:${commitId}`);
 
             if (cachedMetadata) {
@@ -74,7 +80,7 @@ export class MetadataController {
             }
 
             const commitMetadata = await prisma.commitMetaData.findUnique({
-                where: { commitId: Number(commitId) },
+                where: { commitId: existingCommit.id, },
                 include: {
                     commit: true, // Optionally include commit details
                 },
@@ -92,53 +98,65 @@ export class MetadataController {
             handleError(res, error);
         }
     };
+    saveMetadata = async (message: any): Promise<void> => {
+        try {
+            logger.info('Processing metadata from Kafka message');
+            
+            // Extract relevant data from the Kafka message
+            const { commit_id, metadata, video_id } = message;
+            
+            
+            if (!commit_id || !metadata) {
+                throw new AppError("commit_id and metadata are required in the Kafka message", 400);
+            }
+    
+            // Find the commit in the database
+            const existingCommit = await prisma.commit.findUnique({
+                where: { commitId: commit_id },
+            });
+    
+            if (!existingCommit) {
+                throw new AppError(`Commit with ID ${commit_id} not found`, 404);
+            }
+    
+            // Create or update the metadata record
+            const createdMetadata = await prisma.commitMetaData.upsert({
+                where: { commitId: existingCommit.id },
+                update: {
+                    metaData: metadata,
+                },
+                create: {
+                    commitId: existingCommit.id,
+                    metaData: metadata,
+                },
+            });
+    
+            // Cache the metadata in Redis
+            await redisService.set(
+                `commit:metadata:${commit_id}`,
+                JSON.stringify(createdMetadata)
+            );
+    
+            logger.info(`Successfully saved metadata for commit ${commit_id}`);
+    
+        } catch (error) {
+            logger.error('Error processing metadata from Kafka:', error);
+            // You might want to implement retry logic or dead-letter queue handling here
+        }
+    };
 
     async initializeKafkaListener(): Promise<void> {
         try {
             await this.kafkaService.consumeMessages("video.metadata.results", async (message: any) => {
                 try {
                     logger.info(`[KafkaListener - video.metadata.results] Received message:`, message);
-
-                    const commitMetadataMessage: CommitMetadataMessage = message;
-                    const { commitId, metaData } = commitMetadataMessage;
-                    debugger
-                    if (commitId && metaData) {
-                        const existingCommit = await prisma.commit.findUnique({
-                            where: { commitId: commitId },
-                        });
-
-                        if (existingCommit) {
-                            const existingCommitMetadata = await prisma.commitMetaData.findUnique({
-                                where: { commitId: existingCommit.id },
-                            });
-
-                            if (existingCommitMetadata) {
-                                // Update existing metadata
-                                const updatedMetadata = await prisma.commitMetaData.update({
-                                    where: { commitId: existingCommit.id },
-                                    data: { metaData: metaData },
-                                });
-                                logger.info(`[KafkaListener - video.metadata.results] Metadata updated for commit: ${commitId}`, updatedMetadata);
-                            } else {
-                                // Create new metadata
-                                const createdMetadata = await prisma.commitMetaData.create({
-                                    data: {
-                                        commitId: existingCommit.id,
-                                        metaData: metaData,
-                                    },
-                                });
-                                logger.info(`[KafkaListener - video.metadata.results] Metadata saved for commit: ${commitId}`, createdMetadata);
-                            }
-                        } else {
-                            logger.warn(`[KafkaListener - video.metadata.results] Commit with ID ${commitId} not found, cannot save metadata.`);
-                        }
-                    } else {
-                        logger.warn('[KafkaListener - video.metadata.results] Received incomplete commit metadata message.');
-                    }
+                    await this.saveMetadata(message);
+    
                 } catch (error) {
                     logger.error('[KafkaListener - video.metadata.results] Error processing Kafka message:', error);
                 }
-            });
+            },"metadata-group"
+        );
             logger.info('Kafka consumer for commit metadata started successfully');
 
         } catch (error) {
